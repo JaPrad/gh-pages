@@ -3119,7 +3119,7 @@ vertical-align: -.125em;
   <ul class="collapse">
   <li><a href="#single-stack-graph" id="toc-single-stack-graph" class="nav-link" data-scroll-target="#single-stack-graph">Single Stack Graph</a></li>
   <li><a href="#dual-stack-graph" id="toc-dual-stack-graph" class="nav-link" data-scroll-target="#dual-stack-graph">Dual Stack Graph</a></li>
-  <li><a href="#more-stack-graph" id="toc-more-stack-graph" class="nav-link" data-scroll-target="#more-stack-graph">More Stack Graph</a></li>
+  <li><a href="#stack-graphs" id="toc-stack-graphs" class="nav-link" data-scroll-target="#stack-graphs">&gt;2 Stack Graphs</a></li>
   </ul></li>
   </ul></li>
   <li><a href="#labels" id="toc-labels" class="nav-link" data-scroll-target="#labels">11. Add &amp; Format Data Labels</a>
@@ -3300,10 +3300,10 @@ vertical-align: -.125em;
 <section id="top-5" class="level2">
 <h2 class="anchored" data-anchor-id="top-5">5. Select Top ~5 Categories</h2>
 <p>Too many categories in graph cause too much clutter. Select few of them. 5 is generally a good number, but you can have a little more if you feel necessary.</p>
-<p>If you are selecting top 5 categories, you can do that using <code>slice_max(&lt;column-with-values&gt;)</code></p>
+<p>If you are selecting top few categories, you can do that using <code>slice_max(&lt;column-with-values&gt;, n = &lt;how-many-values&gt;)</code></p>
 <section id="example-1" class="level3">
 <h3 class="anchored" data-anchor-id="example-1">Example</h3>
-<p>I am creating a graph showing the percentage of people interested to learn specific vocational skills. In last line, I select the skills with highest percentage of people interested:</p>
+<p>I am creating a graph showing the percentage of people interested to learn specific vocational skills. In last line, I select 5 skills with highest percentage of people interested:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>num_interested <span class="ot">&lt;-</span> <span class="co"># Number of people interested in skill development programs</span></span>
 <span id="cb6-2"><a href="#cb6-2"></a>  data_general <span class="sc">|&gt;</span></span>
@@ -3340,7 +3340,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>This pipe can be continued into a ggplot() function to create a graph. I will show how to do that later.</p>
+<p>This pipe can be continued into a <code>ggplot()</code> function to create a graph. I will show how to do that later.</p>
 </div>
 </div>
 </section>
@@ -3364,8 +3364,10 @@ Note
 </div>
 <section id="example-2" class="level3">
 <h3 class="anchored" data-anchor-id="example-2">Example</h3>
-<p>Using the previous example, I got to know what the top 5 interests are.</p>
+<p>Using the previous example, I got to know what the top 5 interests are. Repeating that here.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Click to see code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>num_interested <span class="ot">&lt;-</span> <span class="co"># Number of people interested in skill development programs</span></span>
 <span id="cb8-2"><a href="#cb8-2"></a>  data_general <span class="sc">|&gt;</span></span>
 <span id="cb8-3"><a href="#cb8-3"></a>  <span class="fu">filter</span>(interest_skill_program <span class="sc">==</span> <span class="st">&quot;yes&quot;</span>) <span class="sc">|&gt;</span></span>
@@ -3380,6 +3382,7 @@ Note
 <span id="cb8-12"><a href="#cb8-12"></a>  <span class="fu">mutate</span>(<span class="at">percentage =</span> (n <span class="sc">/</span> num_interested) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">|&gt;</span>  <span class="co"># find percentage out of those interestes</span></span>
 <span id="cb8-13"><a href="#cb8-13"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(choice_skill_program)) <span class="sc">|&gt;</span>  <span class="co"># remove NA values</span></span>
 <span id="cb8-14"><a href="#cb8-14"></a>  <span class="fu">slice_max</span>(percentage, <span class="at">n =</span> <span class="dv">5</span>)  <span class="co"># slice top 5 skills with highest interest</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 3
   choice_skill_program     n percentage
@@ -3391,7 +3394,7 @@ Note
 5 tailoring              129       25.9</code></pre>
 </div>
 </div>
-<p>Now we will change each of these manually using <code>case_when()</code> inside a <code>mutate()</code> and plot it. It is implemented between lines <code>11</code> &amp; <code>19</code></p>
+<p>Now we will change each of these manually using <code>case_when()</code> inside a <code>mutate()</code>. It is implemented between lines <code>11</code> &amp; <code>19</code>. Then we will plot the graph.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>data_general <span class="sc">|&gt;</span> </span>
 <span id="cb10-2"><a href="#cb10-2"></a>  <span class="fu">filter</span>(interest_skill_program <span class="sc">==</span> <span class="st">&quot;yes&quot;</span>) <span class="sc">|&gt;</span> <span class="co"># take only interested people</span></span>
@@ -3709,8 +3712,8 @@ Note
 </div>
 </div>
 </section>
-<section id="more-stack-graph" class="level4">
-<h4 class="anchored" data-anchor-id="more-stack-graph">More Stack Graph</h4>
+<section id="stack-graphs" class="level4">
+<h4 class="anchored" data-anchor-id="stack-graphs">&gt;2 Stack Graphs</h4>
 <p>Doing the same thing with appropriate color scheme for graphs with 3, 4 and 5 stacks.</p>
 <div class="cell">
 <details class="code-fold">
@@ -3778,18 +3781,19 @@ Difference between <code>geom_col()</code> and <code>geom_bar()</code>
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>In <code>geom_col()</code> you need to mention both the x &amp; y axis columns in the <code>aes()</code>. But in <code>geom_bar()</code>, you usually mention only the x axis column in the <code>aes()</code>. The y axis in <code>geom_bar()</code>by default is the <code>count</code> of the categories mentioned in the x axis.</p>
+<p>In <code>geom_col()</code> you need to mention both the x &amp; y axis columns in the <code>aes()</code>. But in <code>geom_bar()</code>, you usually mention only the x axis column in the <code>aes()</code>. The y axis in <code>geom_bar()</code>by default is the <code>count</code> of the categories mentioned in the x axis. (In other words, <code>geom_bar()</code> creates a frequency plot by default.)</p>
+<p>You can add certain arguments to <code>geom_bar()</code> to make it behave like <code>geom_col()</code>, but I will not cover that here. In general: Use <code>geom_col()</code> if you have columns for both x &amp; y values and use <code>geom_bar()</code> if you want the y axis to have a count of x axis values.</p>
 <p>In our examples, I have used <code>geom_col()</code> for the Vocational Skills, and <code>geom_bar()</code> for <code>mock_data</code>.</p>
 </div>
 </div>
-<p>If your graph doesn’t have flipped coordinates, use <code>vjust</code> instead of <code>hjust</code>. They should have a negative value because we need the labels above the bars. (In other words, <code>geom_bar()</code> creates a frequency plot by default)</p>
+<p>If your graph doesn’t have flipped coordinates, use <code>vjust</code> instead of <code>hjust</code>. They should have a negative value because we need the labels above the bars.</p>
 <p>If your graph has multiple stacks side by side, you have to add a <code>position = position_dodge(width = &lt;some-value&gt;)</code> argument to <code>geom_text()</code> so that the labels don’t overlap.</p>
 <p>Again, this is a little tricky to understand, so don’t worry if you didn’t understand and see the examples.</p>
 <section id="examples" class="level3">
 <h3 class="anchored" data-anchor-id="examples">Examples</h3>
 <section id="eg-col-1-stack" class="level5">
 <h5 class="anchored" data-anchor-id="eg-col-1-stack"><code>geom_col()</code>, Single Stack</h5>
-<p>Using the vocational skills example which uses <code>geom_bar()</code> with only single stack. Labels have been implemented between lines <code>29</code> &amp; <code>32</code>.</p>
+<p>Using the vocational skills example which uses <code>geom_col()</code> with only single stack. Labels have been implemented between lines <code>29</code> &amp; <code>32</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a>data_general <span class="sc">|&gt;</span> </span>
 <span id="cb21-2"><a href="#cb21-2"></a>  <span class="fu">filter</span>(interest_skill_program <span class="sc">==</span> <span class="st">&quot;yes&quot;</span>) <span class="sc">|&gt;</span> <span class="co"># take only interested people</span></span>
