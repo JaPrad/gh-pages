@@ -342,7 +342,7 @@ Michelle, Rishali, Radha, Jyotiraditya
 </section>
 <section id="problem-statement" class="slide level2">
 <h2>Problem Statement</h2>
-<p>Identifying the association of student teacher ratio with other indicators of rural development in the following districts of Uttar Pradesh:</p>
+<p>Identifying the association of student teacher ratio in primary school with other indicators of rural development in the following districts of Uttar Pradesh:</p>
 <div class="fragment">
 <p>Jyotiba Phule Nagar, Kannauj, Kanpur Dehat, Kanpur Nagar, Kanshiram Nagar, Kaushambi, Kheri, Kushinagar, Lalitpur, Lucknow, Mahamaya Nagar, Mahoba, Mahrajganj, Mainpuri, Mathura, Mau, Meerut, Mirzapur, Moradabad, Muzaffarnagar, Pilibhit, Pratapgarh, Rae Bareli, Rampur, Saharanpur, Sant Kabir Nagar, Sant Ravidas Nagar Bhadohi, Shahjahanpur, Shrawasti, Siddharthnagar, Sitapur, Sonbhadra, Sultanpur, Unnao, Varanasi</p>
 </div>
@@ -351,33 +351,39 @@ Michelle, Rishali, Radha, Jyotiraditya
 <h2>Methodology</h2>
 <ul>
 <li class="fragment"><p>Download, merge &amp; filter necessary Mission Antodaya 2020 data from Development Data Lab’s <a href="https://www.devdatalab.org/shrug_download/">Shrug 2.1</a></p></li>
-<li class="fragment"><p>Calculate meaningful variables for analysis by obtaining percentage and per capita terms. Apply log transformation to numeric variables</p></li>
-<li class="fragment"><p>Run regressions on every district. Improve results with stepwise regression and district dummies.</p></li>
-<li class="fragment"><p>Analyse the regression results.</p></li>
-<li class="fragment"><p><add more=""></add></p></li>
+<li class="fragment"><p>Select relevant variables from 5 themes: Health, Education, Facilities &amp; Others.</p></li>
+<li class="fragment"><p>Convert variables to percentages and per capita terms for more meaningful analysis &amp; interpretation.</p></li>
+<li class="fragment"><p>Split villages from each ditrict in training &amp; test datasets with a 70 - 30 ratio. Run theme-wise regressions on every district. The use stepwise regression to slect the most relevant variable for each district.</p></li>
+</ul>
+</section>
+<section id="methodology-1" class="slide level2">
+<h2>Methodology</h2>
+<ul>
+<li class="fragment"><p>Run regression with district dummies to control for inter-district variations. Use bootstrapping to obtain confidence intervals</p></li>
+<li class="fragment"><p>Analyse the regression results and find relevant secondary sources wherever possible.</p></li>
 </ul>
 </section>
 <section id="variables" class="slide level2">
 <h2>Variables</h2>
 <div class="cell">
 <div class="cell-output-display">
-<div id="tpnwwgxtpr" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#tpnwwgxtpr table {
+<div id="xtrgpqryid" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#xtrgpqryid table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#tpnwwgxtpr thead, #tpnwwgxtpr tbody, #tpnwwgxtpr tfoot, #tpnwwgxtpr tr, #tpnwwgxtpr td, #tpnwwgxtpr th {
+#xtrgpqryid thead, #xtrgpqryid tbody, #xtrgpqryid tfoot, #xtrgpqryid tr, #xtrgpqryid td, #xtrgpqryid th {
   border-style: none;
 }
 
-#tpnwwgxtpr p {
+#xtrgpqryid p {
   margin: 0;
   padding: 0;
 }
 
-#tpnwwgxtpr .gt_table {
+#xtrgpqryid .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -403,12 +409,12 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-left-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_caption {
+#xtrgpqryid .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#tpnwwgxtpr .gt_title {
+#xtrgpqryid .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -420,7 +426,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-bottom-width: 0;
 }
 
-#tpnwwgxtpr .gt_subtitle {
+#xtrgpqryid .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -432,7 +438,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-top-width: 0;
 }
 
-#tpnwwgxtpr .gt_heading {
+#xtrgpqryid .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -444,13 +450,13 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-right-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_bottom_border {
+#xtrgpqryid .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_col_headings {
+#xtrgpqryid .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -465,7 +471,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-right-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_col_heading {
+#xtrgpqryid .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -485,7 +491,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   overflow-x: hidden;
 }
 
-#tpnwwgxtpr .gt_column_spanner_outer {
+#xtrgpqryid .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -497,15 +503,15 @@ Michelle, Rishali, Radha, Jyotiraditya
   padding-right: 4px;
 }
 
-#tpnwwgxtpr .gt_column_spanner_outer:first-child {
+#xtrgpqryid .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#tpnwwgxtpr .gt_column_spanner_outer:last-child {
+#xtrgpqryid .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#tpnwwgxtpr .gt_column_spanner {
+#xtrgpqryid .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -517,11 +523,11 @@ Michelle, Rishali, Radha, Jyotiraditya
   width: 100%;
 }
 
-#tpnwwgxtpr .gt_spanner_row {
+#xtrgpqryid .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#tpnwwgxtpr .gt_group_heading {
+#xtrgpqryid .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -547,7 +553,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   text-align: left;
 }
 
-#tpnwwgxtpr .gt_empty_group_heading {
+#xtrgpqryid .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -562,15 +568,15 @@ Michelle, Rishali, Radha, Jyotiraditya
   vertical-align: middle;
 }
 
-#tpnwwgxtpr .gt_from_md > :first-child {
+#xtrgpqryid .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#tpnwwgxtpr .gt_from_md > :last-child {
+#xtrgpqryid .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#tpnwwgxtpr .gt_row {
+#xtrgpqryid .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -589,7 +595,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   overflow-x: hidden;
 }
 
-#tpnwwgxtpr .gt_stub {
+#xtrgpqryid .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -602,7 +608,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   padding-right: 5px;
 }
 
-#tpnwwgxtpr .gt_stub_row_group {
+#xtrgpqryid .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -616,15 +622,15 @@ Michelle, Rishali, Radha, Jyotiraditya
   vertical-align: top;
 }
 
-#tpnwwgxtpr .gt_row_group_first td {
+#xtrgpqryid .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#tpnwwgxtpr .gt_row_group_first th {
+#xtrgpqryid .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#tpnwwgxtpr .gt_summary_row {
+#xtrgpqryid .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -634,16 +640,16 @@ Michelle, Rishali, Radha, Jyotiraditya
   padding-right: 5px;
 }
 
-#tpnwwgxtpr .gt_first_summary_row {
+#xtrgpqryid .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_first_summary_row.thick {
+#xtrgpqryid .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#tpnwwgxtpr .gt_last_summary_row {
+#xtrgpqryid .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -653,7 +659,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-bottom-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_grand_summary_row {
+#xtrgpqryid .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -663,7 +669,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   padding-right: 5px;
 }
 
-#tpnwwgxtpr .gt_first_grand_summary_row {
+#xtrgpqryid .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -673,7 +679,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-top-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_last_grand_summary_row_top {
+#xtrgpqryid .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -683,11 +689,11 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-bottom-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_striped {
+#xtrgpqryid .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#tpnwwgxtpr .gt_table_body {
+#xtrgpqryid .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -696,7 +702,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-bottom-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_footnotes {
+#xtrgpqryid .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -710,7 +716,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-right-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_footnote {
+#xtrgpqryid .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -719,7 +725,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   padding-right: 5px;
 }
 
-#tpnwwgxtpr .gt_sourcenotes {
+#xtrgpqryid .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -733,7 +739,7 @@ Michelle, Rishali, Radha, Jyotiraditya
   border-right-color: #D3D3D3;
 }
 
-#tpnwwgxtpr .gt_sourcenote {
+#xtrgpqryid .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -741,72 +747,72 @@ Michelle, Rishali, Radha, Jyotiraditya
   padding-right: 5px;
 }
 
-#tpnwwgxtpr .gt_left {
+#xtrgpqryid .gt_left {
   text-align: left;
 }
 
-#tpnwwgxtpr .gt_center {
+#xtrgpqryid .gt_center {
   text-align: center;
 }
 
-#tpnwwgxtpr .gt_right {
+#xtrgpqryid .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#tpnwwgxtpr .gt_font_normal {
+#xtrgpqryid .gt_font_normal {
   font-weight: normal;
 }
 
-#tpnwwgxtpr .gt_font_bold {
+#xtrgpqryid .gt_font_bold {
   font-weight: bold;
 }
 
-#tpnwwgxtpr .gt_font_italic {
+#xtrgpqryid .gt_font_italic {
   font-style: italic;
 }
 
-#tpnwwgxtpr .gt_super {
+#xtrgpqryid .gt_super {
   font-size: 65%;
 }
 
-#tpnwwgxtpr .gt_footnote_marks {
+#xtrgpqryid .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#tpnwwgxtpr .gt_asterisk {
+#xtrgpqryid .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#tpnwwgxtpr .gt_indent_1 {
+#xtrgpqryid .gt_indent_1 {
   text-indent: 5px;
 }
 
-#tpnwwgxtpr .gt_indent_2 {
+#xtrgpqryid .gt_indent_2 {
   text-indent: 10px;
 }
 
-#tpnwwgxtpr .gt_indent_3 {
+#xtrgpqryid .gt_indent_3 {
   text-indent: 15px;
 }
 
-#tpnwwgxtpr .gt_indent_4 {
+#xtrgpqryid .gt_indent_4 {
   text-indent: 20px;
 }
 
-#tpnwwgxtpr .gt_indent_5 {
+#xtrgpqryid .gt_indent_5 {
   text-indent: 25px;
 }
 
-#tpnwwgxtpr .katex-display {
+#xtrgpqryid .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#tpnwwgxtpr div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#xtrgpqryid div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -841,13 +847,6 @@ Michelle, Rishali, Radha, Jyotiraditya
 </div>
 </div>
 </div>
-</section>
-<section id="challenges" class="slide level2">
-<h2>Challenges</h2>
-<ul>
-<li class="fragment"><p>Very high student teacher ratio in some case. <em>Removed villages with student teacher ratio over 500 (just 13 out of ~33,000 valid observations)</em></p></li>
-<li class="fragment"><p>Taking Labour Budget per Capita gave coefficient very close to 0. <em>Applied log transformation</em></p></li>
-</ul>
 </section>
 <section id="regression-with-health-variables" class="slide level2">
 <h2>Regression with Health Variables</h2>
@@ -2600,7 +2599,7 @@ Michelle, Rishali, Radha, Jyotiraditya
       <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3" style="font-weight: bold;" scope="colgroup" id="Availability of Other Educational Institutes (D)">
         <div class="gt_column_spanner">Availability of Other Educational Institutes (D)</div>
       </th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="font-weight: bold;" scope="col" id="Undergraduate-&amp;-Postgraduate-Population-(%)">Undergraduate &amp; Postgraduate Population (%)</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="font-weight: bold;" scope="col" id="Undergraduate-&amp;-Postgraduate-Population-(%)">UG &amp; PG Population (%)</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="2" colspan="1" style="font-weight: bold;" scope="col" id="adj_r_sq">Adjusted R<sup>2</sup></th>
       <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="2" colspan="1" style="font-weight: bold;" scope="col" id="rmse">RMSE</th>
     </tr>
@@ -7291,8 +7290,8 @@ Michelle, Rishali, Radha, Jyotiraditya
 </div>
 </div>
 </section>
-<section id="fitted-vs-residuals" class="slide level2 nostretch">
-<h2>Fitted vs Residuals</h2>
+<section id="fitted-vs-residuals-in-stepwise-regression" class="slide level2 nostretch">
+<h2>Fitted vs Residuals in Stepwise Regression</h2>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -7831,14 +7830,21 @@ Michelle, Rishali, Radha, Jyotiraditya
 </div>
 </div>
 </section>
-<section id="fitted-vs.-residuals" class="slide level2">
-<h2>Fitted vs.&nbsp;Residuals</h2>
+<section id="fitted-vs.-residuals-in-district-dummy-regression" class="slide level2">
+<h2>Fitted vs.&nbsp;Residuals in District Dummy Regression</h2>
 
 <img data-src="UP_Group2_FinalAssignment_Presentation_files/figure-revealjs/residuals_vs_fitted_district_dummy-1.png" width="960" class="r-stretch"></section>
-<section id="coefficients-with-95-bootstrped-ci" class="slide level2">
-<h2>Coefficients with 95% Bootstrped CI</h2>
+<section id="coefficients-with-95-bootstrapped-ci" class="slide level2">
+<h2>Coefficients with 95% Bootstrapped CI</h2>
 
-<img data-src="UP_Group2_FinalAssignment_Presentation_files/figure-revealjs/bootstrap_error_plot-1.png" width="960" class="r-stretch"><div class="quarto-auto-generated-content">
+<img data-src="UP_Group2_FinalAssignment_Presentation_files/figure-revealjs/bootstrap_error_plot-1.png" width="960" class="r-stretch"></section>
+<section id="challenges" class="slide level2">
+<h2>Challenges</h2>
+<ul>
+<li class="fragment"><p>Very high student teacher ratio in some case. <em>Removed villages with student teacher ratio over 500 (just 13 out of ~33,000 valid observations)</em></p></li>
+<li class="fragment"><p>Taking Labour Budget per Capita gave coefficient very close to 0. <em>Applied log transformation</em></p></li>
+</ul>
+<div class="quarto-auto-generated-content">
 <div class="footer footer-default">
 
 </div>
