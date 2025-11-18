@@ -986,7 +986,7 @@ boot_summary |>
 *A starting point rather than evidence to make any strong or causal claims*
 
 - Bad fit of regression models. <br>
-*R<sup>2</sup> < 1 in most cases.*
+*Adjusted R<sup>2</sup> < 0.1 in most cases.*
 
 - Controlling with district dummies is not ideal. <br>
 *Does not allow to infer the association of specific district level characteristics that are essential for policy considerations.*
