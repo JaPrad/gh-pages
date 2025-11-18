@@ -1,0 +1,993 @@
+---
+title: "Student Teacher Ratio & Rural Development in Uttar Pradesh"
+subtitle: "Principles of Statistics through Computation"
+author: "Michelle, Rishali, Radha, Jyotiraditya"
+format: 
+  revealjs:
+    html-table-processing: none
+    scrollable: true
+    incremental: true
+    chalkboard: true
+execute:
+  echo: false
+  warning: false
+  message: false
+editor: visual
+---
+
+
+
+## Problem Statement
+
+Identifying the association of student teacher ratio in primary school with other indicators of rural development in the following districts of Uttar Pradesh:
+
+. . .
+
+Jyotiba Phule Nagar, Kannauj, Kanpur Dehat, Kanpur Nagar, Kanshiram Nagar, Kaushambi, Kheri, Kushinagar, Lalitpur, Lucknow, Mahamaya Nagar, Mahoba, Mahrajganj, Mainpuri, Mathura, Mau, Meerut, Mirzapur, Moradabad, Muzaffarnagar, Pilibhit, Pratapgarh, Rae Bareli, Rampur, Saharanpur, Sant Kabir Nagar, Sant Ravidas Nagar Bhadohi, Shahjahanpur, Shrawasti, Siddharthnagar, Sitapur, Sonbhadra, Sultanpur, Unnao, Varanasi
+
+
+## Methodology {.smaller}
+
+- Download, merge & filter necessary Mission Antyodaya 2020 data from Development Data Lab's [Shrug 2.1](https://www.devdatalab.org/shrug_download/)
+
+- Select relevant variables from 5 themes: Health, Education, Facilities & Others.
+
+- Convert variables to percentages and per capita terms for more meaningful analysis & interpretation. 
+
+- Split villages from each ditrict in training & test datasets with a 70 - 30 ratio. Run theme-wise regressions on every district. The use stepwise regression to slect the most relevant variable for each district.
+
+- Run regression with district dummies to control for inter-district variations. Use bootstrapping to obtain confidence intervals 
+
+- Analyse the regression results and find relevant secondary sources wherever possible.
+
+```{r import_lib}
+library(tidyverse)
+library(janitor)
+library(gt)
+library(patchwork)
+library(scales)
+library(ggrepel)
+```
+
+
+```{r import_data}
+data <- read_csv("up_group2_data.csv")
+```
+
+```{r new_variables}
+
+data |> 
+  mutate(
+    student_teacher_ratio = (total_primary_school_students / total_primary_school_teachers),
+    
+    health_centre = ifelse(phc | sub_centre | chc, 1, 0),
+    share_insurance_receiving = (gp_total_no_of_beneficiaries_rec / gp_total_no_of_eligible_benefici) * 100,
+    share_icds_pregnant = (total_no_of_pregnant_women_recei / total_no_of_pregnant_women) * 100,
+    share_below_6_immunized = (total_no_of_children_0_to_6_year / (total_female_child_age_bw_0_6 + total_male_child_age_bw_0_6)) * 100,
+    share_underweight_newborn = (total_no_of_newly_born_underweig / total_no_of_newly_born_children) * 100,
+    
+    is_primary_school_with_toilet = ifelse(any_primary_sch_toilet >= 1, 1, 0),
+    share_grd_pg = (total_grd_and_pg_in_village / total_population) * 100,
+    
+    share_hhd_piped = (total_hhd_having_piped_water_con / total_hhd) * 100,
+    
+    share_farming_activity = (total_hhd_engaged_in_farm_activi / total_hhd) * 100,
+    share_hhd_ssh = (total_hhd_mobilized_into_shg / total_hhd) * 100,
+    labour_budget_per_capita = (total_approved_labour_budget_for / total_population)
+  ) |> 
+  mutate(
+    ln_labour_budget_per_capita = log(labour_budget_per_capita)
+  ) -> data
+
+```
+
+```{r convert_na}
+data |> 
+  mutate(across(everything(), ~ifelse(is.nan(.), NA, .))) |> 
+  mutate(across(everything(), ~ifelse(is.infinite(.), NA, .))) -> data
+```
+
+
+## Variables
+
+```{r variables}
+
+variable_list = list(
+  
+  health = c("health_centre", "share_insurance_receiving", "share_icds_pregnant", "share_below_6_immunized", "share_underweight_newborn"),
+  
+  education = c("is_primary_school_with_electrici", "is_primary_school_have_drinking_", "is_primary_school_with_toilet", "availability_of_middle_school", "availability_of_high_school", "availability_of_govt_degree_coll", "share_grd_pg"),
+  
+  facilities = c("is_bank_available", "no_electricity", "share_hhd_piped", "is_village_connected_to_all_weat", "is_broadband_available"),
+  
+  other = c("share_farming_activity", "share_hhd_ssh", "public_info_board", "ln_labour_budget_per_capita")
+)
+
+variable_vec <- 
+  variable_list |> 
+  unlist() |> 
+  unname()
+
+tibble(variable_vec) |> 
+  rename(variable = variable_vec) |> 
+  mutate(
+    long_name = case_when(
+      variable == "health_centre" ~ "Health Centre (D)",
+      variable == "share_insurance_receiving" ~ "Beneficiaries receiving PMJAY/State Health Insurance (%)",
+      variable == "share_icds_pregnant" ~ "Pregnant Women receiving care under ICDS (%)",
+      variable == "share_below_6_immunized" ~ "Children below 6 years Immunized (%)",
+      variable == "share_underweight_newborn" ~ "Underweight Newborns (%)",
+      
+      variable == "is_primary_school_with_electrici" ~ "Electricity in Primary School (D)",
+      variable == "is_primary_school_have_drinking_" ~ "Drinking Water in Primary School (D)",
+      variable == "is_primary_school_with_toilet" ~ "Toilet in Primary School (D)",
+      variable == "availability_of_middle_school" ~ "Middle School (D)",
+      variable == "availability_of_high_school" ~ "High School (D)",
+      variable == "availability_of_govt_degree_coll" ~ "Govt. Degree granting College (D)",
+      variable == "share_grd_pg" ~ "Undergraduate & Postgraduate Population (%)",
+      
+      variable == "is_bank_available" ~ "Bank (D)",
+      variable == "no_electricity" ~ "No Electricity (D)",
+      variable == "share_hhd_piped" ~ "Share of Households with Piped Water (%)",
+      variable == "is_village_connected_to_all_weat" ~ "Connection to All Weather Road (D)",
+      variable == "is_broadband_available" ~ "Broadband/Internet Facilty (D)",
+      
+      variable == "share_farming_activity" ~ "Population in Farming (%)",
+      variable == "share_hhd_ssh" ~ "Households mobilized into SHGs (%)",
+      variable == "public_info_board" ~ "Public Information Board (D)",
+      variable == "labour_budget_per_capita" ~ "Labour Budget per Capita",
+      variable == "ln_labour_budget_per_capita" ~ "ln(Labour Budget per Capita)"
+    )
+  ) -> variable_long_names
+```
+
+```{r long_names_function}
+
+give_long_name <- function(short_name){
+    variable_long_names |> 
+      filter(variable == short_name) |> 
+      pull(long_name)
+}
+```
+
+```{r var_table}
+
+lapply(names(variable_list), function(x){
+  theme <- x
+  
+  sapply(variable_list[[theme]], function(x){
+  give_long_name(x)
+    }) |>
+  as.character() |>
+  paste(collapse = ", ")
+}) |> 
+  unlist() %>%
+  tibble(Variables = .) |> 
+  mutate(Theme = names(variable_list), .before = Variables) |> 
+  mutate(Theme = str_to_title(Theme)) |> 
+  gt(rowname_col = "Theme") |> 
+  tab_stubhead("Theme") |> 
+  
+  
+  tab_footnote(footnote = "(D) indicates a dummy variable.") |> 
+  
+  
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = list(
+      cells_stubhead(), 
+      cells_column_labels(), 
+      cells_column_spanners()
+  )) |> 
+  
+  tab_source_note("Table 1: Independent Variables by Theme") |> 
+  tab_style(
+    style = cell_text(size = "larger", weight = "bold", align = "center"),
+    locations = cells_source_notes()
+    ) |> 
+  tab_options(
+    table.font.size = 25,
+    table.border.bottom.style = "hidden"
+    )
+```
+
+
+```{r remove_anomalies}
+data |> 
+  filter(student_teacher_ratio <= 500) -> data
+```
+
+
+```{r training_test_classification}
+set.seed(2025)
+
+data |> 
+  slice(0) -> test_data
+
+data |> 
+  distinct(district_name) |> 
+  pull(district_name) -> district_vec
+
+lapply(district_vec, function(x){
+  district <- x
+  
+  data |> 
+    filter(district_name == district) %>%
+    slice_sample(n = round(0.3 * nrow(.)))
+}) |> 
+  bind_rows() -> test_data
+
+test_data |> 
+  pull(shrid2) -> test_data_shrid2
+
+data |> 
+  filter(!(shrid2 %in% test_data_shrid2)) -> training_data
+```
+
+
+## Regression with Health Variables
+
+``` {r districtwise_regression_function}
+
+district_wise_regression = function(data, response_var, independent_var_vec){
+  
+  district_vec <- 
+    data |> 
+    distinct(district_name) |> 
+    arrange(district_name) |> 
+    pull(district_name)
+  
+  lapply(1:length(district_vec), function(x){
+    
+    formula = paste0(
+      response_var,
+      "~",
+      paste(independent_var_vec, collapse = "+")
+      )
+    
+    model <- lm(formula, data |> filter(district_name == district_vec[x]))
+
+    summary(model)$coefficients |>
+      as.table() |> 
+      as.data.frame() |> 
+      as.tibble() |> 
+      pivot_wider(names_from = Var2, values_from = Freq) |> 
+      clean_names() |> 
+      rename(var = var1) |> 
+      
+      mutate(sig_star = case_when(
+        pr_t < 0.005 ~ "***",
+        pr_t < 0.05 ~ "**",
+        pr_t < 0.1 ~ "*",
+        .default = ""
+      )) |> 
+      
+      filter(var != "(Intercept)") |> 
+      mutate(display = paste0(as.character(round(estimate, 2)), " ", sig_star, "<br>(", as.character(round(std_error, 2)), ")")) |> 
+      mutate(district_name = district_vec[x]) |> 
+      rowwise() |> 
+      mutate(var = give_long_name(var)) |> 
+      ungroup() |> 
+      mutate(
+        adj_r_sq = summary(model)$adj.r.squared |> round(4),
+        rmse = model$residuals^2 |> 
+          mean() |> 
+          sqrt() |> 
+          round(2)
+      )
+  }) |> 
+    bind_rows()
+}
+
+```
+
+
+```{r themewise_regression_functions}
+
+theme_regression_table <- function(theme, title_text){
+  
+  district_wise_regression(
+  training_data,
+  "student_teacher_ratio",
+  variable_list[[theme]]
+  ) -> main_theme_table
+
+  
+  main_theme_table |> 
+    select(district_name, var, display, adj_r_sq, rmse) |> 
+    pivot_wider(names_from = var, values_from = display) |> 
+    mutate(district_name = str_to_title(district_name)) |> 
+    relocate(adj_r_sq, rmse, .after = last_col()) |> 
+    
+    gt(rowname_col = "district_name") |> 
+    tab_stubhead("District") |> 
+    cols_label(
+      adj_r_sq = html("Adjusted R<sup>2</sup>"),
+      rmse = "RMSE"
+      ) |>
+    
+    tab_footnote(footnote = "(D) indicates a dummy variable.") |> 
+    tab_footnote(footnote = "Standard errors in parantheses.") |> 
+    tab_footnote(footnote = "*** p<0.01, ** p<0.05, * p<0.1") |> 
+    
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = list(
+        cells_stubhead(), 
+        cells_column_labels(), 
+        cells_column_spanners()
+    )) |> 
+    
+    tab_source_note(title_text) |> 
+    tab_style(
+      style = cell_text(size = "larger", weight = "bold", align = "center"),
+      locations = cells_source_notes()
+      ) |> 
+    tab_options(
+      table.font.size = 23,
+      table.border.bottom.style = "hidden"
+      ) |> 
+    fmt_markdown()
+}
+
+theme_summary_table <- function(theme, title_text){
+  
+  district_wise_regression(
+  training_data,
+  "student_teacher_ratio",
+  variable_list[[theme]]
+  ) -> main_theme_table
+
+  
+  main_theme_table |> 
+  mutate(sign = case_when(
+    estimate > 0 ~ "positive",
+    estimate < 0 ~ "negative",
+    estimate == 0 ~ "zero"
+  )) |> 
+  filter(pr_t < 0.05) |> 
+  count(var, sign) |> 
+  pivot_wider(names_from = sign, values_from = n) |> 
+  rowwise() |> 
+  mutate(across(c(positive, negative), ~ {
+    if(is.na(.x)) {
+      return(0)
+    } else(
+      return(.x)
+    )
+  })) |> 
+  ungroup() |> 
+  select(var, positive, negative) -> coefficient_sign_table
+
+main_theme_table |> 
+  mutate(
+    sig_10 = ifelse(pr_t < 0.1, 1, 0),
+    sig_5 = ifelse(pr_t < 0.05, 1, 0),
+    sig_1 = ifelse(pr_t < 0.001, 1, 0)
+    ) |> 
+  group_by(var) |> 
+  summarise(
+    sig_10 = sum(sig_10),
+    sig_5 = sum(sig_5),
+    sig_1 = sum(sig_1)
+    ) |> 
+  arrange(desc(sig_5)) |> 
+  left_join(coefficient_sign_table) |> 
+  
+  gt(rowname_col = "var") |> 
+  tab_stubhead("Variable") |> 
+  
+  tab_spanner(
+    label = "Significance Level",
+    columns = c(sig_10, sig_5, sig_1)
+  ) |> 
+  tab_spanner(
+    label = "Sign of Coefficients at 5% Significance",
+    columns = c(positive, negative)
+  ) |> 
+  
+  cols_label(
+    sig_10 = "10%",
+    sig_5 = "5%",
+    sig_1 = "1%",
+    positive = "Positive",
+    negative = "Negative",
+  ) |> 
+  
+  tab_footnote(footnote = "(D) indicates a dummy variable.") |> 
+  
+  
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = list(
+      cells_stubhead(), 
+      cells_column_labels(), 
+      cells_column_spanners()
+  )) |> 
+  
+  tab_source_note(title_text) |> 
+  tab_style(
+    style = cell_text(size = "larger", weight = "bold", align = "center"),
+    locations = cells_source_notes()
+    ) |> 
+  tab_options(
+    table.font.size = 23,
+    table.border.bottom.style = "hidden"
+    )
+}
+
+```
+
+
+```{r health}
+
+theme_regression_table("health", "Table 2: District Wise Regression of Health Variables on Student Teacher Ratio")
+```
+
+
+## Regression with Health Variables (Summary)
+
+``` {r health2}
+theme_summary_table("health", "Table 3: Count of Significant Variables and Sign of their Coefficients among Education Variables")
+
+```
+
+## Regression with Education Variables
+
+```{r education}
+theme_regression_table("education", "Table 4: District Wise Regression of Education Variables on Student Teacher Ratio") |> 
+  tab_spanner(
+    label = "Facilities in Primary School (D)",
+    columns = c(`Electricity in Primary School (D)`, `Drinking Water in Primary School (D)`, `Toilet in Primary School (D)`)
+  ) |> 
+  
+  tab_spanner(
+    label = "Availability of Other Educational Institutes (D)",
+    columns = c(`Middle School (D)`, `High School (D)`, `Govt. Degree granting College (D)`)
+  ) |> 
+  
+  cols_label(
+    `Electricity in Primary School (D)` = "Electricity", `Drinking Water in Primary School (D)` = "Drinking Water", `Toilet in Primary School (D)` = "Toilet"
+  ) |> 
+  
+  cols_label(
+    `Middle School (D)` = "Middle School", 
+    `High School (D)` = "High School", 
+    `Govt. Degree granting College (D)` = "Govt. Degree Granting College",
+    `Undergraduate & Postgraduate Population (%)` = "UG & PG Population (%)"
+  ) |> 
+  
+  
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = list(
+      cells_stubhead(), 
+      cells_column_labels(), 
+      cells_column_spanners()
+  ))
+```
+
+## Regression with Education Variables (Summary)
+
+``` {r education2}
+theme_summary_table("education", "Table 5: Count of Significant Variables and Sign of their Coefficients among Education Variables")
+```
+
+
+## Regression with Facility Variables
+
+```{r facilities}
+
+theme_regression_table("facilities", "Table 6: District Wise Regression of Facility Variables on Student Teacher Ratio")
+
+```
+
+## Regression with Facility Variables (Summary)
+
+```{r facilities2}
+
+theme_summary_table("facilities", "Table 7: Count of Significant Variables and Sign of their Coefficients among Facility Variables")
+
+```
+
+## Regression with Other Variables
+
+```{r others}
+
+theme_regression_table("other", "Table 8: District Wise Regression of Other Variables on Student Teacher Ratio")
+
+```
+
+
+## Regression with Other Variables (Summary)
+
+```{r others2}
+theme_summary_table("other", "Table 9: Count of Significant Variables and Sign of their Coefficients among Other Variables")
+```
+
+## Stepwise Regression
+
+``` {r stepwise model}
+formula <- paste0("student_teacher_ratio~", paste(variable_vec, collapse = "+"))
+
+lapply(district_vec, function(x){
+  
+  district <- x
+  
+  training_data |> 
+    filter(district_name == district) -> current_data
+  
+  current_data <- na.omit(current_data[, c("student_teacher_ratio", variable_vec) ])
+
+  model <- lm(as.formula(formula), current_data)
+  step(model, direction = "both", trace = 0)
+  }) |> 
+  c() -> district_models
+
+names(district_models) <- district_vec 
+
+tibble(district_name = district_vec) |> 
+  rowwise() |> 
+  mutate(
+    formula = strsplit(as.character(district_models[[district_name]]$call$formula)[3], " \\+ ")[[1]] |> 
+      sapply(function(x){give_long_name(x)}) |> 
+      paste(collapse = ", "),
+    
+    adj_r_sq = summary(district_models[[district_name]])$adj.r.sq |> round(3),
+    
+    rmse = district_models[[district_name]]$residuals^2 |>
+      mean() |> 
+      sqrt() |> 
+      round(2)
+      ) |> 
+  mutate(
+    district_name = str_to_title(district_name)
+  ) |> 
+  ungroup() |> 
+  
+  gt(rowname_col = "district_name") |> 
+  tab_stubhead("District") |> 
+  
+  
+  cols_label(
+    formula = "Independent Variables",
+    adj_r_sq = html("Adjusted R<sup>2</sup>"),
+    rmse = "RMSE"
+  ) |> 
+  
+  
+    tab_footnote(footnote = "(D) indicates a dummy variable.") |> 
+    tab_footnote(footnote = "Standard errors in parantheses.") |> 
+    tab_footnote(footnote = "*** p<0.01, ** p<0.05, * p<0.1") |> 
+    
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = list(
+        cells_stubhead(), 
+        cells_column_labels(), 
+        cells_column_spanners()
+    )) |> 
+    
+    tab_source_note("Table 10: Stepwise Regression on Student Teacher Ratio by District") |> 
+    tab_style(
+      style = cell_text(size = "larger", weight = "bold", align = "center"),
+      locations = cells_source_notes()
+      ) |> 
+    tab_options(
+      table.font.size = 23,
+      table.border.bottom.style = "hidden"
+      ) 
+```
+
+
+
+## Stepwise Regression (Summary)
+
+```{r stepwise_model_summary}
+
+lapply(1:length(district_models), function(x){
+  
+  district_models[[x]] |> 
+    summary() |> 
+    coefficients() |> 
+    as.table() |> 
+    as.data.frame() |> 
+    as.tibble() |> 
+    mutate(district = names(district_models)[x])
+    
+}) |> 
+  bind_rows() -> step_summary
+
+  step_summary |> 
+    group_by(Var1) |> 
+    pivot_wider(names_from = Var2, values_from = Freq) |> 
+    clean_names() |> 
+    filter(pr_t < 0.05) |> 
+    mutate(sign = case_when(
+      estimate > 0 ~ "positive",
+      estimate < 0 ~ "negative"
+    )) |> 
+    filter(var1 != "(Intercept)") |> 
+    count(var1, sign) |> 
+    pivot_wider(names_from = sign, values_from = n) |> 
+    mutate(
+      positive = ifelse(is.na(positive), 0, positive),
+      negative = ifelse(is.na(negative), 0, negative)
+    ) -> step_sign_table
+```   
+
+```{r stepwise_significance}
+step_summary |> 
+  pivot_wider(names_from = Var2, values_from = Freq) |> 
+  clean_names() |> 
+  filter(var1 != "(Intercept)") |> 
+  mutate(
+    sig_10 = ifelse(pr_t < 0.1, 1, 0),
+    sig_5 = ifelse(pr_t < 0.05, 1, 0),
+    sig_1 = ifelse(pr_t < 0.001, 1, 0)
+    ) |> 
+  group_by(var1) |> 
+  summarise(
+    sig_10 = sum(sig_10),
+    sig_5 = sum(sig_5),
+    sig_1 = sum(sig_1)
+    ) |> 
+  arrange(desc(sig_5)) |> 
+  left_join(step_sign_table) |> 
+  rowwise() |> 
+  mutate(var1 = give_long_name(var1)) |>
+  ungroup() |> 
+  
+  gt(rowname_col = "var1") |>
+  tab_stubhead("Variable") |> 
+  
+  tab_spanner(
+    label = "Significance Level",
+    columns = c(sig_10, sig_5, sig_1)
+  ) |> 
+  
+  tab_spanner(
+    label = "Sign of Coeffcient at 5% Significance",
+    columns = c(positive, negative)
+  ) |> 
+  
+  cols_label(
+    sig_10 = "10%",
+    sig_5 = "5%",
+    sig_1 = "1%",
+    positive = "Positive",
+    negative = "Negative"
+  ) |> 
+  tab_footnote(footnote = "(D) indicates a dummy variable.") |> 
+  
+  
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = list(
+      cells_stubhead(), 
+      cells_column_labels(), 
+      cells_column_spanners()
+  )) |> 
+  
+  tab_source_note("Table 11: Count of Significant Variables and Sign of their Coefficients in Stepwise Regression") |> 
+  tab_style(
+    style = cell_text(size = "larger", weight = "bold", align = "center"),
+    locations = cells_source_notes()
+    ) |> 
+  tab_options(
+    table.font.size = 23,
+    table.border.bottom.style = "hidden"
+    )
+```
+
+## Fitted vs Residuals in Stepwise Regression {.nostretch}
+
+```{r prediction_stepwise}
+
+predict_district_wise <- function(data){
+  
+  lapply(district_vec, function(x){
+  data |> 
+    filter(district_name == x) -> current_data
+  
+ current_model <-
+  district_models[[x]]
+
+
+  current_data$predicted <- predict.lm(current_model, current_data)
+  
+  current_data |>
+    select(shrid2, district_name, subdistrict_name, place_name, student_teacher_ratio, predicted) |> 
+    mutate(residual = student_teacher_ratio - predicted)
+}) |> 
+  bind_rows()
+}
+
+training_prediction <- predict_district_wise(training_data)
+test_prediction <- predict_district_wise(test_data)
+```
+
+
+```{r fitted_residual_stepwise}
+#| fig-height: 50
+
+plot_list <- list()
+
+for (dist in district_vec) {
+  
+  training_prediction |> 
+    filter(district_name == dist) |> 
+    select(predicted, residual) -> dist_training 
+
+  training_cor <- cor(
+        dist_training$predicted, 
+        dist_training$residual, 
+        use = "na.or.complete"
+        ) |> 
+        round(3)
+  
+  dist_training |> 
+    ggplot(aes(x = predicted, y = residual)) +
+    geom_point(size = 0.5) +
+    geom_smooth(method = "lm", se = F , linewidth = 0.5) +
+    xlim(-10, 80) +
+    ylim(-150, 150) +
+    labs(
+      title = str_to_title(dist),
+      subtitle = "Training",
+      x = "Fitted",
+      y = "Residuals",
+      caption = paste0("r = ", training_cor)
+    ) +
+    theme_bw() +
+    theme(plot.caption = element_text(size = 12)) -> p1
+  
+  
+  test_prediction |> 
+    filter(district_name == dist) |> 
+    select(predicted, residual) -> dist_test
+  
+  test_cor <- cor(
+        dist_test$predicted, 
+        dist_test$residual, 
+        use = "na.or.complete"
+        ) |> 
+        round(3)
+  
+  dist_test |> 
+    ggplot(aes(x = predicted, y = residual)) +
+    geom_point(size = 0.5) +
+    geom_smooth(method = "lm", se = F , linewidth = 0.5) +
+    xlim(-10, 80) +
+    ylim(-150, 150) +
+    labs(
+      subtitle = "Test",
+      x = "Fitted",
+      y = "Residuals",
+      caption = paste0("r = ", test_cor)
+    ) +
+    theme_bw() +
+    theme(plot.caption = element_text(size = 12)) -> p2
+  
+  p1 + p2 + 
+    plot_layout(axis_titles = "collect") -> plot_list[[dist]]
+}
+
+ wrap_plots(plot_list, ncol = 2)
+  
+```
+
+## Regression with District Dummies
+
+```{r district_dummy_regression}
+
+formula_district_dummy <- paste0(formula, "+format(district_name)")
+
+district_dummy_lm <- lm(as.formula(formula_district_dummy), data = data) 
+
+
+summary(district_dummy_lm)$coefficients |>
+  as.table() |> 
+  as.data.frame() |> 
+  as.tibble() |>
+  pivot_wider(names_from = "Var2", values_from = "Freq") |>
+  clean_names() |> 
+  filter(var1 != "(Intercept)") |> 
+  
+  mutate(sig_star = case_when(
+        pr_t < 0.005 ~ "***",
+        pr_t < 0.05 ~ "**",
+        pr_t < 0.1 ~ "*",
+        .default = ""
+      )) |> 
+  
+  rowwise() |> 
+  mutate(display = paste0(as.character(round(estimate, 3)), " ", sig_star, "<br>(", as.character(round(std_error, 2)), ")")) |> 
+  ungroup() |> 
+  filter(!grepl("^format\\(district_name\\)", var1)) |> 
+  arrange(pr_t) -> district_dummy_regression
+ 
+```
+
+```{r district_dummy_table}
+
+district_dummy_regression |> 
+  rowwise() |> 
+  mutate(var1 = give_long_name(var1)) |> 
+  ungroup() |> 
+  select(var1, display) |> 
+  gt(rowname_col = "var1") |> 
+  tab_stubhead("Variable") |> 
+  cols_label(
+    display = "Regression Result"
+  ) |> 
+  
+  tab_footnote(footnote = html(
+    paste0(
+      "<p> <b>Adjusted R<sup>2</sup>:</b> ",
+      summary(district_dummy_lm)$adj.r.squared |> round(3), 
+      ", <b>RMSE:</b> ", district_dummy_lm$residuals^2 |> mean() |> sqrt() |> round(2), "</p>"))) |> 
+  tab_footnote(footnote = "(D) indicates a dummy variable.") |> 
+  tab_footnote(footnote = "Standard errors in parantheses.") |> 
+  tab_footnote(footnote = "*** p<0.01, ** p<0.05, * p<0.1") |> 
+  
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = list(
+      cells_stubhead(), 
+      cells_column_labels(), 
+      cells_column_spanners()
+  )) |> 
+  
+  tab_source_note("Table 12: Regression on Student Teacher Ratio with District Dummies") |> 
+  tab_style(
+    style = cell_text(size = "larger", weight = "bold", align = "center"),
+    locations = cells_source_notes()
+    ) |> 
+  tab_options(
+    table.font.size = 23,
+    table.border.bottom.style = "hidden"
+    ) |> 
+  fmt_markdown()
+```
+
+
+## Fitted vs. Residuals in District Dummy Regression
+
+```{r residuals_vs_fitted_district_dummy}
+
+data |> 
+  mutate(fitted = predict.lm(district_dummy_lm, data)) |>
+  mutate(residual = student_teacher_ratio - fitted) -> district_dummy_fitted_residual_data
+
+district_dummy_cor <- cor(district_dummy_fitted_residual_data$fitted, district_dummy_fitted_residual_data$residual, use = "complete.obs")
+
+district_dummy_fitted_residual_data |> 
+  ggplot(aes(x = fitted, y = residual)) +
+  geom_point(size = 0.5) +
+  geom_smooth(method = "lm", se = F , linewidth = 0.5) +
+  labs(
+      x = "Fitted",
+      y = "Residuals",
+      caption = paste0("r = ", round(district_dummy_cor, 100))
+    ) +
+    theme_bw() +
+    theme(
+      axis.title = element_text(size = 16), 
+      axis.text = element_text(size = 16),
+      plot.caption = element_text(size = 14)
+      )
+
+
+```
+
+
+## Coefficients with 95% Bootstrapped CI
+
+```{r bootstrap_setup}
+set.seed(125)
+B <- 1000
+n <- nrow(data)
+```
+
+```{r bootstrap_read}
+
+boot.outcome <- read_csv("bootsrap_data.csv")
+#Calculating mean and SE for each coefficient
+boot.mean <- sapply(boot.outcome,mean,na.rm=TRUE)
+boot.se <- sapply(boot.outcome,sd,na.rm=TRUE)
+
+lower_cutoff <- qt(0.025,df=B-1)
+upper_cutoff <- qt(0.975,df=B-1)
+
+ci.lower <- boot.mean + lower_cutoff*boot.se
+ci.upper <- boot.mean + upper_cutoff*boot.se
+
+
+
+boot_long <- boot.outcome |>
+  pivot_longer(cols = everything(),
+               names_to = "Variable",
+               values_to = "Value")
+
+boot_ci <- boot_long |>
+  distinct(Variable) |>
+  mutate(
+    ci_lower = ci.lower,
+    ci_upper = ci.upper
+  )
+
+district_dummy_regression |> 
+  filter(pr_t < 0.05) |> 
+  filter(!grepl("^format\\(district_name\\)", var1)) |> 
+  filter(var1 != "(Intercept)") |> 
+  pull(var1) |> 
+  as.character() -> district_dummy_sig_vars
+
+```
+
+```{r bootstrap_error_plot}
+
+boot.outcome |>
+  pivot_longer(cols = everything(), names_to = "Variable", values_to = "Value") |>
+  group_by(Variable) |>
+  summarise(
+    Mean = mean(Value, na.rm = TRUE)
+  ) |> 
+  rowwise() |> 
+  mutate(
+    ci_upper = ci.upper[[Variable]],
+    ci_lower = ci.lower[[Variable]]
+  ) |> 
+  ungroup() |> 
+  left_join(district_dummy_regression, b= join_by(Variable == var1)) -> boot_summary
+
+boot_summary |> 
+  filter(Variable %in% district_dummy_sig_vars) |> 
+  rowwise() |> 
+  mutate(Variable = give_long_name(Variable)) |> 
+  ungroup() |> 
+  
+  ggplot(aes(x = reorder(Variable, pr_t, decreasing = T), y = estimate)) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper),
+                width = 0.25, color = "gray40") +
+  geom_point(size = 1, color = "navy") +
+  coord_cartesian(clip = "off") +
+  coord_flip() +
+  labs(
+    x = "Variable",
+    y = "Coefficient"
+  ) +
+  scale_x_discrete(labels = label_wrap(34)) +
+  geom_text(aes(label = round(estimate, 2)), vjust = 1.5) +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = 16), 
+    axis.text = element_text(size = 14),
+    axis.text.x = element_text(margin = margin(10,0,0,0))
+  )
+  
+```
+
+## Challenges
+
+- Very high student teacher ratio in some cases. <br>
+ *Removed villages with student teacher ratio over 500 (just 13 out of ~33,000 valid observations).*
+
+- Taking Labour Budget per Capita gave coefficient very close to 0. <br>
+*Applied log transformation.*
+
+- Importing & merging large datasets & running bootstrapping every time while rendering took very long. <br>
+*Used write_csv() to store the generated data.*
+
+## Limitations
+
+- This is an exploratory analysis. <br>
+*A starting point rather than evidence to make any strong or causal claims*
+
+- Bad fit of regression models. <br>
+*R<sup>2</sup> < 1 in most cases.*
+
+- Controlling with district dummies is not ideal. <br>
+*Does not allow to infer the association of specific district level characteristics that are essential for policy considerations.*
+
